@@ -32,6 +32,11 @@ io.on('connection', (socket) => {
     socket.on('sendImages', (images) => {
         currentImages = images;
     });
+
+    socket.on('sendCardId', (cardId) => {
+        socket.broadcast.emit('loadCardId', cardId);
+    });
+
 });
 
 server.listen(3000);
