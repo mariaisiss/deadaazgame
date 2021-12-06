@@ -21,7 +21,8 @@ socket.on('connect', () => {
 });
 
 socket.on('loadCardId', (card) => {
-	console.log(card);
+	let myCard = new DOMParser().parseFromString(card, "text/xml");
+	console.log(myCard);
 });
 
 //imagem a ser exibida em caso de acerto
@@ -168,9 +169,7 @@ function flipCard(){
 		//adiciona a carta clicada ao array de cartas viradas
 		flippedCards.push(this);
 
-		console.log(this);
-
-		socket.emit('sendCardId', this);
+		socket.emit('sendCardId', this.outerHTML);
 
 		//verifica se o número de cartas no array de cartas viradas é igual a 2
 		if(flippedCards.length === 2){
