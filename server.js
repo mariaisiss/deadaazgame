@@ -37,6 +37,10 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('loadCardId', cardId);
     });
 
+    socket.on('errorClick', (flippedCards) => {
+        socket.broadcast.emit('sendErrorClick', flippedCards);
+    });
+
 });
 
 server.listen(3000);
