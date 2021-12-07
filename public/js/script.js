@@ -21,19 +21,12 @@ socket.on('connect', () => {
 });
 
 socket.on('loadCardId', (card) => {
-	//let myCard = new DOMParser().parseFromString(card, "text/xml");
-	testFlipCard(card);
+	auxFlipCard(card);
 });
 
-socket.on('sendErrorClick', (flippedCards) => {
-	console.log(flippedCards)
-	console.log(document.getElementById(flippedCards[0]))
+socket.on('sendErrorClick', (fCards) => {
 
-	document.getElementById(flippedCards[0]).children[0].className ="face back";
-	document.getElementById(flippedCards[0]).children[1].className ="face front";
-	
-	document.getElementById(flippedCards[1]).children[0].className ="face back";
-	document.getElementById(flippedCards[1]).children[1].className ="face front";
+	removeflippedCards(fCards);
 });
 
 //imagem a ser exibida em caso de acerto
@@ -58,6 +51,18 @@ for (var i = 0; i < 16; i++){
 		
 	//inserer o objeto criado no array
 	images.push(img);
+}
+
+function removeflippedCards(fCards){
+    // Remove cartas que estão viradas
+    document.getElementById(fCards[0]).children[0].className ="face back";
+	document.getElementById(fCards[0]).children[1].className ="face front";
+
+	document.getElementById(fCards[1]).children[0].className ="face back";
+	document.getElementById(fCards[1]).children[1].className ="face front";
+
+	// Zera o array de cartas viradas
+	flippedCards = [];
 }
 
 //função de inicialização do jogo - distribui as cartas
@@ -104,8 +109,8 @@ function startGame(images){
 };//fim da função de inicialização do jogo
 
 //função que vira as cartas
-function testFlipCard(cardId){
-	
+function auxFlipCard(cardId){
+	debugger;
 	var card = document.getElementById(cardId);
 	//verifica se o número de cartas viradas é menor que 2
 	if(flippedCards.length < 2){
@@ -214,6 +219,7 @@ function flipCard(){
 		flippedCards[1].childNodes[1].classList.toggle("flipped");
 		flippedCards[1].childNodes[3].classList.toggle("flipped");
 		
+		// Emite para que outro jogar remova as flippedcards tambem
 		var cardIdArray = []
 		cardIdArray.push(flippedCards[0].id);
 		cardIdArray.push(flippedCards[1].id);
