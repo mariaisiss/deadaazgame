@@ -13,6 +13,9 @@ app.set('view engine', 'html');
 var numberOfPlayers = 0;
 var currentImages   = [];
 
+var players = [];
+var currentPlayer;
+
 app.use('/', (req, res) => {
     res.render('index.html');
 });

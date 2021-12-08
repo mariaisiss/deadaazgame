@@ -4,17 +4,18 @@ const socket = io()
 var images = [];
 
 socket.on('connect', () => {
-	document.getElementById('player-id').textContent = `${socket.id}`;
 	socket.emit('connected', true);
 	socket.on('getNumberOfPlayers', (numberOfPlayers) => {
 		if(numberOfPlayers < 1) {
 			images = randomSort(images)
 			socket.emit('sendImages', images);
 			startGame(images);
+			document.getElementById('player-id').textContent = "Jogador 1";
 		} else {
 			socket.on('loadImages', (currentImages) => {
 				images = currentImages;
 				startGame(images)
+				document.getElementById('player-id').textContent = "Jogador 2";
 			});
 		}
 	});
