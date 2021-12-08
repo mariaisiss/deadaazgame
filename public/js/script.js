@@ -3,16 +3,27 @@ const socket = io()
 // array onde é guardado a ordem das cartas
 var images = [];
 
+var player = {
+	id: "",
+	turn: false
+}
+
 socket.on('connect', () => {
 	socket.emit('connected', true);
 	socket.on('getNumberOfPlayers', (numberOfPlayers) => {
 		if(numberOfPlayers < 1) {
-			images = randomSort(images)
+			player.id = socket.id;
+			player.turn = true;
+			//images = randomSort(images)
 			socket.emit('sendImages', images);
+			socket.emit('sendPlayerId', socket.id, true);
 			startGame(images);
 			document.getElementById('player-id').textContent = "Jogador 1";
 		} else {
 			socket.on('loadImages', (currentImages) => {
+				player.id = socket.id;
+				player.turn = false;
+				socket.emit('sendPlayerId', socket.id, false);
 				images = currentImages;
 				startGame(images)
 				document.getElementById('player-id').textContent = "Jogador 2";
@@ -26,8 +37,14 @@ socket.on('loadCardId', (card) => {
 });
 
 socket.on('sendErrorClick', (fCards) => {
-
 	removeflippedCards(fCards);
+});
+
+socket.on('updateTurn', (id) => {
+	console.log(id)
+	if(player.id != id) {
+		player.turn = true;
+	}
 });
 
 //imagem a ser exibida em caso de acerto
@@ -111,7 +128,6 @@ function startGame(images){
 
 //função que vira as cartas
 function auxFlipCard(cardId){
-	debugger;
 	var card = document.getElementById(cardId);
 	//verifica se o número de cartas viradas é menor que 2
 	if(flippedCards.length < 2){
@@ -167,67 +183,76 @@ function auxFlipCard(cardId){
 }
 
 //função que vira as cartas
-function flipCard(){
-	//verifica se o número de cartas viradas é menor que 2
-	if(flippedCards.length < 2){
-		//pega as faces da carta clicada
-		var faces = this.getElementsByClassName("face");
+function flipCard() {
+
+	if(player.turn) {
+
+		//verifica se o número de cartas viradas é menor que 2
+		if(flippedCards.length < 2){
+			//pega as faces da carta clicada
+			var faces = this.getElementsByClassName("face");
+				
+			//confere se a carta já está virada, impedindo que a mesma carta seja virada duas vezes
+			if(faces[0].classList[2]){
+				return;
+			}
+
+			//adiciona a classe fliped às faces da carta para que sejam viradas
+			faces[0].classList.toggle("flipped");
+			faces[1].classList.toggle("flipped");
+				
+			//adiciona a carta clicada ao array de cartas viradas
+			flippedCards.push(this);
+
+			socket.emit('sendCardId', this.id);
+
+			//verifica se o número de cartas no array de cartas viradas é igual a 2
+			if(flippedCards.length === 2){
+				//compara o id das cartas viradas para ver se houve um acerto
+				if(flippedCards[0].childNodes[3].id === flippedCards[1].childNodes[3].id){
+					//em caso de acerto adiciona a classe match a todas as faces das duas cartas presentes no array de cartas viradas
+					flippedCards[0].childNodes[1].classList.toggle("match");
+					flippedCards[0].childNodes[3].classList.toggle("match");
+					flippedCards[1].childNodes[1].classList.toggle("match");
+					flippedCards[1].childNodes[3].classList.toggle("match");
+
+					//chama a função que exibe a mensagem MATCH
+					matchCardsSign();
+						
+					//limpa o array de cartas viradas
+					flippedCards = [];
+						
+					//soma um ao contador de acertos
+					matches++;
+
+					//verifica se o contador de acertos chegou a 8
+					if(matches >= 8){
+						//caso haja 8 acertos, chama a função que finaliza o jogo
+						gameOver();
+					}
+				}
+			} 
+		} else {
+			//em caso haver duas cartas no array de cartas viradas (terceiro click) remove a classe flipped das cartas no array de cartas viradas
+			flippedCards[0].childNodes[1].classList.toggle("flipped");
+			flippedCards[0].childNodes[3].classList.toggle("flipped");
+			flippedCards[1].childNodes[1].classList.toggle("flipped");
+			flippedCards[1].childNodes[3].classList.toggle("flipped");
 			
-		//confere se a carta já está virada, impedindo que a mesma carta seja virada duas vezes
-		if(faces[0].classList[2]){
-			return;
+			// Emite para que outro jogar remova as flippedcards tambem
+			var cardIdArray = []
+			cardIdArray.push(flippedCards[0].id);
+			cardIdArray.push(flippedCards[1].id);
+			socket.emit('errorClick', cardIdArray);
+			//limpa o array de cartas viradas
+			flippedCards = [];
+
+			player.turn = false;
+			socket.emit('changeTurn', player.id);
 		}
 
-		//adiciona a classe fliped às faces da carta para que sejam viradas
-		faces[0].classList.toggle("flipped");
-		faces[1].classList.toggle("flipped");
-			
-		//adiciona a carta clicada ao array de cartas viradas
-		flippedCards.push(this);
-
-		socket.emit('sendCardId', this.id);
-
-		//verifica se o número de cartas no array de cartas viradas é igual a 2
-		if(flippedCards.length === 2){
-			//compara o id das cartas viradas para ver se houve um acerto
-			if(flippedCards[0].childNodes[3].id === flippedCards[1].childNodes[3].id){
-				//em caso de acerto adiciona a classe match a todas as faces das duas cartas presentes no array de cartas viradas
-				flippedCards[0].childNodes[1].classList.toggle("match");
-				flippedCards[0].childNodes[3].classList.toggle("match");
-				flippedCards[1].childNodes[1].classList.toggle("match");
-				flippedCards[1].childNodes[3].classList.toggle("match");
-
-				//chama a função que exibe a mensagem MATCH
-				matchCardsSign();
-					
-				//limpa o array de cartas viradas
-				flippedCards = [];
-					
-				//soma um ao contador de acertos
-				matches++;
-
-				//verifica se o contador de acertos chegou a 8
-				if(matches >= 8){
-					//caso haja 8 acertos, chama a função que finaliza o jogo
-					gameOver();
-				}
-			}
-		} 
-	} else {
-		//em caso haver duas cartas no array de cartas viradas (terceiro click) remove a classe flipped das cartas no array de cartas viradas
-		flippedCards[0].childNodes[1].classList.toggle("flipped");
-		flippedCards[0].childNodes[3].classList.toggle("flipped");
-		flippedCards[1].childNodes[1].classList.toggle("flipped");
-		flippedCards[1].childNodes[3].classList.toggle("flipped");
-		
-		// Emite para que outro jogar remova as flippedcards tambem
-		var cardIdArray = []
-		cardIdArray.push(flippedCards[0].id);
-		cardIdArray.push(flippedCards[1].id);
-		socket.emit('errorClick', cardIdArray);
-		//limpa o array de cartas viradas
-		flippedCards = [];
 	}
+	
 
 }
 

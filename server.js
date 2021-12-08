@@ -13,8 +13,17 @@ app.set('view engine', 'html');
 var numberOfPlayers = 0;
 var currentImages   = [];
 
-var players = [];
-var currentPlayer;
+var players = [
+    {
+        id: "",
+        turn: false
+    },
+    {
+        id: "",
+        turn: false
+    }
+];
+var turns = 0;
 
 app.use('/', (req, res) => {
     res.render('index.html');
@@ -42,6 +51,25 @@ io.on('connection', (socket) => {
 
     socket.on('errorClick', (flippedCards) => {
         socket.broadcast.emit('sendErrorClick', flippedCards);
+    });
+
+    socket.on('sendPlayerId', (id, turn) => {
+        if(turn == 1) {
+            players[0].id = id;
+            players[0].turn = turn;
+        } else {
+            players[1].id = id;
+            players[1].turn = turn;
+        }
+    });
+
+    socket.on('changeTurn', (id) => {
+        console.log(id);
+        for(player in players) {
+            console.log(player);
+            player.turn = !player.turn;
+        }
+        socket.broadcast.emit('updateTurn', id);
     });
 
 });
