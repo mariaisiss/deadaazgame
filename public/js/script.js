@@ -1,7 +1,8 @@
 const socket = io()
 
-// array onde é guardado a ordem das cartas
 var images = [];
+
+var canPlay = false;
 
 var player = {
 	id: "",
@@ -13,21 +14,23 @@ socket.on('connect', () => {
 	socket.emit('connected', true);
 	socket.on('getNumberOfPlayers', (numberOfPlayers) => {
 		if(numberOfPlayers < 1) {
-			player.id = socket.id;
+			player.id = "player1";
 			player.turn = true;
-			//images = randomSort(images)
+			images = randomSort(images)
 			socket.emit('sendImages', images);
-			socket.emit('sendPlayerId', socket.id, true);
+			socket.emit('sendPlayerId', "player1", true);
 			startGame(images);
 			document.getElementById('player-id').textContent = "Jogador 1";
 		} else {
 			socket.on('loadImages', (currentImages) => {
-				player.id = socket.id;
+				player.id = "player2";
 				player.turn = false;
-				socket.emit('sendPlayerId', socket.id, false);
+				socket.emit('sendPlayerId', "player2", false);
 				images = currentImages;
 				startGame(images)
 				document.getElementById('player-id').textContent = "Jogador 2";
+				canPlay = true;
+				socket.emit('canPlay');
 			});
 		}
 	});
@@ -42,17 +45,31 @@ socket.on('sendErrorClick', (fCards) => {
 });
 
 socket.on('updateTurn', (id) => {
-	console.log(id)
 	if(player.id != id) {
 		player.turn = true;
 	}
 });
 
+var modal1 = document.querySelector("#vence1");
+var modal2 = document.querySelector("#vence2");
+var modal3 = document.querySelector("#empate");
+
+socket.on('playerWinner', (id) => {
+	if(id == "player1") {
+		modal1.style.zIndex = "99";
+	} else if(id == "player2") {
+		modal2.style.zIndex = "99";
+	} else {
+		modal3.style.zIndex = "99";
+	}
+});
+
+socket.on('updateCanPlay', (canPlayNow) => {
+	canPlay = canPlayNow;
+});
+
 //imagem a ser exibida em caso de acerto
 var matchSign = document.querySelector("#match");
-			
-//imagem de fim do jogo
-var modal = document.querySelector("#gameOver");
 	
 //array que armazena as cartas viradas
 var flippedCards = [];
@@ -119,10 +136,18 @@ function startGame(images){
 	}
 		
 	//joga a imagem de game over para o plano de fundo
-	modal.style.zIndex = "-2";
+	modal1.style.zIndex = "-2";
+	modal2.style.zIndex = "-3";
+	modal3.style.zIndex = "-4";
 		
 	//remove o evento click da imagem de game over
-	modal.removeEventListener('click',function(){
+	modal1.removeEventListener('click',function(){
+		startGame();
+	},false);
+	modal2.removeEventListener('click',function(){
+		startGame();
+	},false);
+	modal3.removeEventListener('click',function(){
 		startGame();
 	},false);
 };//fim da função de inicialização do jogo
@@ -166,7 +191,7 @@ function auxFlipCard(cardId){
 				//verifica se o contador de acertos chegou a 8
 				if(matches >= 8){
 					//caso haja 8 acertos, chama a função que finaliza o jogo
-					gameOver();
+					socket.emit('endGame');
 				}
 			}
 		} 
@@ -186,7 +211,7 @@ function auxFlipCard(cardId){
 //função que vira as cartas
 function flipCard() {
 
-	if(player.turn) {
+	if(player.turn && canPlay) {
 
 		//verifica se o número de cartas viradas é menor que 2
 		if(flippedCards.length < 2){
@@ -218,9 +243,7 @@ function flipCard() {
 					flippedCards[1].childNodes[3].classList.toggle("match");
 
 					player.points++;
-					console.log(player.id);
 					socket.emit('updatePoints', player.id);
-					console.log(player.points);
 					document.getElementById('points').textContent = `Points: ${player.points}`;
 
 					//chama a função que exibe a mensagem MATCH
@@ -235,7 +258,8 @@ function flipCard() {
 					//verifica se o contador de acertos chegou a 8
 					if(matches >= 8){
 						//caso haja 8 acertos, chama a função que finaliza o jogo
-						gameOver();
+						socket.emit('endGame');
+
 					}
 				}
 			} 
@@ -307,15 +331,3 @@ function matchCardsSign(){
 		matchSign.style.top = "250px";
 	},1500);
 };//fim da função que exibe mensagem de MATCH
-	
-//função de fim do jogo
-function gameOver(){
-	//joga a mensagem de fim do jogo para o plano da frente
-	modal.style.zIndex = "99";
-		
-	//adiciona o evento click à imagem de game over
-	modal.addEventListener('click',function(){
-		//chama a função que reinicia o jogo
-		startGame();
-	},false);
-};

@@ -65,7 +65,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('changeTurn', (id) => {
-        console.log(id);
         for(player in players) {
             player.turn = !player.turn;
         }
@@ -74,11 +73,24 @@ io.on('connection', (socket) => {
 
     socket.on('updatePoints', (id) => {
         for(let i = 0; i < players.length; i++) {
-            console.log(players[i]);
             if(players[i].id === id) {
                 players[i].points += 1;
             }
         }
+    });
+
+    socket.on('endGame', () => {
+        if(players[0].points > players[1].points) {
+            socket.broadcast.emit('playerWinner', players[0].id);
+        } else if(players[0].points < players[1].points) {
+            socket.broadcast.emit('playerWinner', players[1].id);
+        } else {
+            socket.broadcast.emit('playerWinner', 'empate');
+        }
+    });
+
+    socket.on('canPlay', () => {
+        socket.broadcast.emit('updateCanPlay', true);
     });
 
 });
