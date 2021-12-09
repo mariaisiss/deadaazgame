@@ -1,14 +1,30 @@
 const socket = io()
 
+// Array que armazena as cartas
 var images = [];
-
+// Verificador para verificar a preseça do segundo jogar para desbloquear o tabuleiro
 var canPlay = false;
 
+// Objeto que representa o jogador
 var player = {
 	id: "",
 	turn: false,
 	points: 0
 }
+
+// Imagens de finalizacao do jogo
+var modal1 = document.querySelector("#vence1");
+var modal2 = document.querySelector("#vence2");
+var modal3 = document.querySelector("#empate");
+
+//imagem a ser exibida em caso de acerto
+var matchSign = document.querySelector("#match");
+	
+//array que armazena as cartas viradas
+var flippedCards = [];
+
+//variável contadora de acertos. ao chegar em 8 o jogo termina
+var matches = 0;
 
 socket.on('connect', () => {
 	socket.emit('connected', true);
@@ -50,10 +66,6 @@ socket.on('updateTurn', (id) => {
 	}
 });
 
-var modal1 = document.querySelector("#vence1");
-var modal2 = document.querySelector("#vence2");
-var modal3 = document.querySelector("#empate");
-
 socket.on('playerWinner', (id) => {
 	if(id == "player1") {
 		modal1.style.zIndex = "99";
@@ -67,15 +79,6 @@ socket.on('playerWinner', (id) => {
 socket.on('updateCanPlay', (canPlayNow) => {
 	canPlay = canPlayNow;
 });
-
-//imagem a ser exibida em caso de acerto
-var matchSign = document.querySelector("#match");
-	
-//array que armazena as cartas viradas
-var flippedCards = [];
-	
-//variável contadora de acertos. ao chegar em 8 o jogo termina
-var matches = 0;
 
 //estrutura de atribuição das imagens aos cards
 for (var i = 0; i < 16; i++){
@@ -152,7 +155,7 @@ function startGame(images){
 	},false);
 };//fim da função de inicialização do jogo
 
-//função que vira as cartas
+//função que vira as cartas espelhando a jogada do outro jogador.
 function auxFlipCard(cardId){
 	var card = document.getElementById(cardId);
 	//verifica se o número de cartas viradas é menor que 2
@@ -208,7 +211,7 @@ function auxFlipCard(cardId){
 
 }
 
-//função que vira as cartas
+//função que vira as cartas do jogador atual
 function flipCard() {
 
 	if(player.turn && canPlay) {
