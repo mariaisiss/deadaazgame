@@ -1,16 +1,21 @@
+// Importando Express e o Path (api do Node.js)
 const express = require('express');
 const path = require('path');
 
+// Associando o express ao 'app'
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
+// Configurando express
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'public'));
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
+// Controla o numero de jogarores
 var numberOfPlayers = 0;
+// Array para carregar o tabuleiro do jogo e que sera sincronizado entre os clients
 var currentImages   = [];
 
 var players = [
@@ -26,6 +31,7 @@ var players = [
     }
 ];
 
+// Criando rota para retornar o jogo (renderiza o index.html)
 app.use('/', (req, res) => {
     res.render('index.html');
 });
@@ -33,12 +39,14 @@ app.use('/', (req, res) => {
 io.on('connection', (socket) => {
     console.log("Novo cliente conectado. ID => " + socket.id);
     
+    // Quando cliente se conecta, incrementa o numero de jogadores
     socket.on('connected', (clientStatus) => {
         if(clientStatus) {
             numberOfPlayers++;
         }
     });
 
+    // Eventos relacionados a lógica do jogo
     socket.emit('getNumberOfPlayers', numberOfPlayers);
     socket.emit('loadImages', currentImages);
 
@@ -95,4 +103,5 @@ io.on('connection', (socket) => {
 
 });
 
+// Usando porta 3000
 server.listen(3000);
