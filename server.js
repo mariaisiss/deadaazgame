@@ -16,14 +16,15 @@ var currentImages   = [];
 var players = [
     {
         id: "",
-        turn: false
+        turn: false,
+        points: 0
     },
     {
         id: "",
-        turn: false
+        turn: false,
+        points: 0
     }
 ];
-var turns = 0;
 
 app.use('/', (req, res) => {
     res.render('index.html');
@@ -66,10 +67,18 @@ io.on('connection', (socket) => {
     socket.on('changeTurn', (id) => {
         console.log(id);
         for(player in players) {
-            console.log(player);
             player.turn = !player.turn;
         }
         socket.broadcast.emit('updateTurn', id);
+    });
+
+    socket.on('updatePoints', (id) => {
+        for(let i = 0; i < players.length; i++) {
+            console.log(players[i]);
+            if(players[i].id === id) {
+                players[i].points += 1;
+            }
+        }
     });
 
 });

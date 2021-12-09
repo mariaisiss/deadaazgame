@@ -5,7 +5,8 @@ var images = [];
 
 var player = {
 	id: "",
-	turn: false
+	turn: false,
+	points: 0
 }
 
 socket.on('connect', () => {
@@ -215,6 +216,12 @@ function flipCard() {
 					flippedCards[0].childNodes[3].classList.toggle("match");
 					flippedCards[1].childNodes[1].classList.toggle("match");
 					flippedCards[1].childNodes[3].classList.toggle("match");
+
+					player.points++;
+					console.log(player.id);
+					socket.emit('updatePoints', player.id);
+					console.log(player.points);
+					document.getElementById('points').textContent = `Points: ${player.points}`;
 
 					//chama a função que exibe a mensagem MATCH
 					matchCardsSign();
